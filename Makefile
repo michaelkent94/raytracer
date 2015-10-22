@@ -1,17 +1,16 @@
 CC = gcc
 GEOMDIR = geom
-GEOMOBJ = color.o intersect.o material.o point.o ray.o sphere.o triangle.o vec.o
-OBJ = raytracer.o $(addprefix $(GEOMDIR)/,$(GEOMOBJ))
+GEOMOBJ = color intersect material point ray sphere triangle vec
+OBJ = $(addsuffix .o, raytracer $(addprefix $(GEOMDIR)/,$(GEOMOBJ)))
+OBJDIR = obj
 EXEC = ray
 
-$(GEOMDIR)/%.o: %.c
-	$(CC) -c -o $@ $<
-
 %.o: %.c
-	$(CC) -c -o $@ $<
+	mkdir -p $(OBJDIR)
+	$(CC) -c -o $(OBJDIR)/$(notdir $@) $<
 
 $(EXEC): $(OBJ)
-	$(CC) -o $@ $^
+	$(CC) -o $@ $(addprefix $(OBJDIR)/,$(notdir $^))
 
 clean:
-	rm -f $(EXEC) $(GEOMDIR)/*.o *.o
+	rm -rf $(EXEC) $(OBJDIR)
