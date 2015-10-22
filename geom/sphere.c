@@ -2,9 +2,9 @@
 
 #include "math.h"
 
-sphere_t sphere_new(point_t center, float radius) {
+sphere_t sphere_new(point_t center, float radius, material_t material) {
   sphere_t sphere;
-  sphere.center = center; sphere.radius = radius;
+  sphere.center = center; sphere.radius = radius; sphere.material = material;
   return sphere;
 }
 

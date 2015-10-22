@@ -10,7 +10,7 @@ int main() {
   triangle_t triangle = triangle_new3(a, b, c, m);
 
   point_t s = point_new(0, 0, 3);
-  sphere_t sphere = sphere_new(s, 1);
+  sphere_t sphere = sphere_new(s, 1, m);
 
   point_t p = point_new(0, 0, 0);
   vec_t d = vec_new(0, 0, 2);
