@@ -7,6 +7,7 @@
 #include "geom/material.h"
 #include "geom/point.h"
 #include "geom/ray.h"
+#include "geom/sphere.h"
 #include "geom/triangle.h"
 #include "geom/vec.h"
 

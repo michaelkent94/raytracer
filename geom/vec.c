@@ -1,5 +1,7 @@
 #include "vec.h"
 
+#include "math.h"
+
 vec_t vec_new(float x, float y, float z) {
   vec_t v; v.x = x; v.y = y; v.z = z;
   return v;
