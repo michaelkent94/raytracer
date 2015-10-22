@@ -25,6 +25,10 @@ vec_t vec_cross(vec_t u, vec_t v) {
                  u.x * v.y - u.y * v.x);
 }
 
+vec_t vec_mult(vec_t u, float s) {
+  return vec_new(s * u.x, s * u.y, s * u.z);
+}
+
 float vec_norm(vec_t u) {
   return sqrt(u.x * u.x + u.y * u.y + u.z * u.z);
 }
