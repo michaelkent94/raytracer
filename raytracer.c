@@ -1,8 +1,30 @@
 #include <stdio.h>
-
 #include "geom.h"
 
-int main() {
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
+
+int main(int argc, char **argv) {
+
+  // Determine what the output image should be
+  char filename[14];
+  if (argc > 1) {
+    if (strncmp(argv[1], "reference.png", 13) == 0) {
+      strcpy(filename, "reference.png");
+    }
+    else if (strncmp(argv[1], "custom.png", 10) == 0) {
+      strcpy(filename, "custom.png");
+    }
+    else {
+      fprintf(stderr, "Incorrect argument recieved\nUsage: %s reference.png | custom.png\n", argv[0]);
+      return 1;
+    }
+  }
+  else { // No argument
+    fprintf(stderr, "No argument recieved\nUsage: %s reference.png | custom.png\n", argv[0]);
+    return 2;
+  }
+
   point_t a = point_new(1, -1, 1);
   point_t b = point_new(0, 1, 1);
   point_t c = point_new(-1, -1, 1);
@@ -21,5 +43,22 @@ int main() {
   // if (ray_intersects_triangle(r, &triangle, &intersect)) {
     printf("Intersects at (%f, %f, %f)\n", intersect.point.x, intersect.point.y, intersect.point.z);
   }
+
+  // Prepare size of PNG and data array
+  int width = 512, height = 512;
+  char imageData[width*height*3];
+
+  // Fudge some fake data for the image
+  for (int i = 0; i < width; i++) {
+    for (int j = 0; j < height; j++) {
+      imageData[i*width*3 + j*3 + 0] = 0; // R
+      imageData[i*width*3 + j*3 + 1] = 0; // G
+      imageData[i*width*3 + j*3 + 2] = 0; // B
+    }
+  }
+
+  // Write image out to PNG
+  stbi_write_png(filename, width, height, 3, imageData, width*3);
+
   return 0;
 }

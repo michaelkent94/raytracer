@@ -13,4 +13,4 @@ $(EXEC): $(OBJ)
 	$(CC) -o $@ $(addprefix $(OBJDIR)/,$(notdir $^))
 
 clean:
-	rm -rf $(EXEC) $(OBJDIR)
+	rm -rf $(EXEC) $(OBJDIR) reference.png custom.png
