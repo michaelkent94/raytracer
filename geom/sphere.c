@@ -34,13 +34,17 @@ bool ray_intersects_sphere(ray_t ray, sphere_t *sphere, intersect_t *intersect) 
     }
   }
 
-  intersect->point = point_new(ray.point.x + ray.direction.x * t,
-                               ray.point.y + ray.direction.y * t,
-                               ray.point.z + ray.direction.z * t);
-  intersect->t = t;
-  intersect->object = sphere;
-  intersect->geomType = GeomTypeSphere;
-  return true;
+  if (t < intersect->t || intersect->t == -1) { // Closer than current intersection
+    intersect->point = point_new(ray.point.x + ray.direction.x * t,
+                                 ray.point.y + ray.direction.y * t,
+                                 ray.point.z + ray.direction.z * t);
+    intersect->t = t;
+    intersect->object = sphere;
+    intersect->geomType = GeomTypeSphere;
+    return true;
+  }
+  
+  return false;
 }
 
 vec_t sphere_normal_at_point(sphere_t sphere, point_t point) {

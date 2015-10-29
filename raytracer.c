@@ -4,6 +4,8 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
+int width = 512, height = 512; // PNG image size
+
 int main(int argc, char **argv) {
 
   // Determine what the output image should be
@@ -25,35 +27,69 @@ int main(int argc, char **argv) {
     return 2;
   }
 
-  point_t a = point_new(1, -1, 1);
-  point_t b = point_new(0, 1, 1);
-  point_t c = point_new(-1, -1, 1);
-  material_t m;
+  // Test triangle
+  color_t color = rgb(255, 0, 0);
+  material_t m = material_new(color, 0);
+  point_t a = point_new(-1, -1, -10);
+  point_t b = point_new(0, 2, -10);
+  point_t c = point_new(1, -1, -8);
   triangle_t triangle = triangle_new3(a, b, c, m);
 
-  point_t s = point_new(0, 0, 3);
+  // Test sphere
+  color = rgb(0, 255, 0);
+  m = material_new(color, 0);
+  point_t s = point_new(0, 0, -10);
   sphere_t sphere = sphere_new(s, 1, m);
 
-  point_t p = point_new(0, 0, 0);
-  vec_t d = vec_new(0, 0, 2);
-  ray_t r = ray_new(p, d);
+  // Camera position
+  point_t cameraPos = point_new(0, 0, 0);
 
-  intersect_t intersect;
-  if (ray_intersects_sphere(r, &sphere, &intersect)) {
-  // if (ray_intersects_triangle(r, &triangle, &intersect)) {
-    printf("Intersects at (%f, %f, %f)\n", intersect.point.x, intersect.point.y, intersect.point.z);
-  }
-
-  // Prepare size of PNG and data array
-  int width = 512, height = 512;
+  // Prepare PNG data array
   char imageData[width*height*3];
+  int imagePos = 0;
 
-  // Fudge some fake data for the image
-  for (int i = 0; i < width; i++) {
-    for (int j = 0; j < height; j++) {
-      imageData[i*width*3 + j*3 + 0] = 0; // R
-      imageData[i*width*3 + j*3 + 1] = 0; // G
-      imageData[i*width*3 + j*3 + 2] = 0; // B
+  float x, y, z = -2;
+  point_t pixelPos;
+  vec_t rayDirection;
+  ray_t ray;
+  intersect_t intersect;
+
+  // Calculate the color of each pixel
+  for (float j = 0; j < height; j++) {
+    for (float i = 0; i < width; i++) {
+      intersect.t = -1;
+      x = (i + 0.5) * 2 / width - 1;
+      y = -((j + 0.5) * 2 / height - 1);
+      pixelPos = point_new(x, y, z);
+      rayDirection = vec_normalize(point_direction(cameraPos, pixelPos));
+      ray = ray_new(cameraPos, rayDirection);
+
+      // Sphere intersection
+      ray_intersects_sphere(ray, &sphere, &intersect);
+
+      // Triangle intersection
+      ray_intersects_triangle(ray, &triangle, &intersect);
+
+
+      if (intersect.t >= 0) {
+        if (intersect.geomType == GeomTypeTriangle) {
+          triangle_t *temp = (triangle_t *)intersect.object;
+          imageData[imagePos++] = temp->material.color.r; // R
+          imageData[imagePos++] = temp->material.color.g; // G
+          imageData[imagePos++] = temp->material.color.b; // B
+        }
+        else if(intersect.geomType == GeomTypeSphere) {
+          sphere_t *temp = (sphere_t *)intersect.object;
+          imageData[imagePos++] = temp->material.color.r; // R
+          imageData[imagePos++] = temp->material.color.g; // G
+          imageData[imagePos++] = temp->material.color.b; // B
+        }
+      }
+      else { // No intersection, color black
+        imageData[imagePos++] = 0; // R
+        imageData[imagePos++] = 0; // G
+        imageData[imagePos++] = 0; // B
+      }
     }
   }
 

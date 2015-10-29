@@ -33,11 +33,15 @@ bool ray_intersects_triangle(ray_t ray, triangle_t *triangle, intersect_t *inter
   float beta = (J * (E * I - H * F) + K * (G * F - D * I) + L * (D * H - E * G)) / M;
   if (beta < 0 || beta > 1 - gamma) return false;
 
-  intersect->point = point_new(ray.point.x + ray.direction.x * t,
-                               ray.point.y + ray.direction.y * t,
-                               ray.point.z + ray.direction.z * t);
-  intersect->t = t;
-  intersect->object = triangle;
-  intersect->geomType = GeomTypeTriangle;
-  return true;
+  if (t < intersect->t || intersect->t == -1) {
+    intersect->point = point_new(ray.point.x + ray.direction.x * t,
+                                 ray.point.y + ray.direction.y * t,
+                                 ray.point.z + ray.direction.z * t);
+    intersect->t = t;
+    intersect->object = triangle;
+    intersect->geomType = GeomTypeTriangle;
+    return true;
+  }
+
+  return false;
 }
