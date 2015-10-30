@@ -11,10 +11,10 @@ int main(int argc, char **argv) {
   // Determine what the output image should be
   char filename[14];
   if (argc > 1) {
-    if (strncmp(argv[1], "reference.png", 13) == 0) {
+    if (strncmp(argv[1], "reference", 13) == 0) {
       strcpy(filename, "reference.png");
     }
-    else if (strncmp(argv[1], "custom.png", 10) == 0) {
+    else if (strncmp(argv[1], "custom", 10) == 0) {
       strcpy(filename, "custom.png");
     }
     else {
