@@ -7,9 +7,9 @@
 int width = 512, height = 512; // PNG image size
 
 // The scene
-triangle_t triangles[10]; int numTriangles = 0;
-sphere_t spheres[10]; int numSpheres = 0;
-point_t lights[10]; int numLights = 0;
+triangle_t triangles[20]; int numTriangles = 0;
+sphere_t spheres[20]; int numSpheres = 0;
+point_t lights[20]; int numLights = 0;
 
 void setUpReference() {
   // Light
@@ -68,6 +68,82 @@ void setUpReference() {
   triangles[numTriangles++] = triangle_new3(a, b, c, red);
 }
 
+void setUpCustom() {
+  // Light
+  lights[numLights++] = point_new(0, 0, -4);
+
+  // Reflective material
+  color_t color = rgb(0, 0, 0);
+  material_t refl = material_new(color, 1);
+
+  // Red material
+  color = rgb(231, 76, 60);
+  material_t red = material_new(color, 0);
+
+  // Green material
+  color = rgb(46, 204, 113);
+  material_t green = material_new(color, 0);
+
+  // White material
+  color = rgb(255, 255, 255);
+  material_t white = material_new(color, 0);
+
+  // Sphere
+  point_t s = point_new(-1, -1, -8);
+  spheres[numSpheres++] = sphere_new(s, 1, refl);
+
+  // White back wall
+  point_t a = point_new(-2.5, -2, -10);
+  point_t b = point_new(2.5, -2, -10);
+  point_t c = point_new(-2.5, 2, -10);
+  triangles[numTriangles++] = triangle_new3(a, b, c, white);
+  a = point_new(2.5, -2, -10);
+  b = point_new(2.5, 2, -10);
+  c = point_new(-2.5, 2, -10);
+  triangles[numTriangles++] = triangle_new3(a, b, c, white);
+
+  // White ceiling
+  a = point_new(-2.5, 2, -2);
+  b = point_new(2.5, 2, -2);
+  c = point_new(2.5, 2, -10);
+  triangles[numTriangles++] = triangle_new3(a, b, c, white);
+  a = point_new(-2.5, 2, -2);
+  b = point_new(2.5, 2, -10);
+  c = point_new(-2.5, 2, -10);
+  triangles[numTriangles++] = triangle_new3(a, b, c, white);
+
+  // White floor
+  a = point_new(-2.5, -2, -2);
+  b = point_new(2.5, -2, -2);
+  c = point_new(2.5, -2, -10);
+  triangles[numTriangles++] = triangle_new3(a, b, c, white);
+  a = point_new(-2.5, -2, -2);
+  b = point_new(2.5, -2, -10);
+  c = point_new(-2.5, -2, -10);
+  triangles[numTriangles++] = triangle_new3(a, b, c, white);
+
+  // Red left wall
+  a = point_new(-2.5, -2, -2);
+  b = point_new(-2.5, -2, -10);
+  c = point_new(-2.5, 2, -10);
+  triangles[numTriangles++] = triangle_new3(a, b, c, red);
+  a = point_new(-2.5, -2, -2);
+  b = point_new(-2.5, 2, -10);
+  c = point_new(-2.5, 2, -2);
+  triangles[numTriangles++] = triangle_new3(a, b, c, red);
+
+  // Green right wall
+  a = point_new(2.5, -2, -2);
+  b = point_new(2.5, -2, -10);
+  c = point_new(2.5, 2, -10);
+  triangles[numTriangles++] = triangle_new3(a, b, c, green);
+  a = point_new(2.5, -2, -2);
+  b = point_new(2.5, 2, -10);
+  c = point_new(2.5, 2, -2);
+  triangles[numTriangles++] = triangle_new3(a, b, c, green);
+
+}
+
 void rayIntersectionTest(ray_t ray, intersect_t *intersect) {
   intersect->t = -1;
   // Sphere intersections
@@ -83,12 +159,13 @@ void rayIntersectionTest(ray_t ray, intersect_t *intersect) {
 
 color_t shootRay(ray_t ray, intersect_t *intersect, int recursionCount) {
   rayIntersectionTest(ray, intersect);
-  if (intersect->t > 0) {
+  if (intersect->t > 0) { // We hit something
     color_t color;
     GeomType geomType = intersect->geomType;
     void *geomObject = intersect->object;
     bool reflective = false;
 
+    // Check the material
     if (geomType == GeomTypeTriangle) {
       triangle_t *temp = (triangle_t *)geomObject;
       color = temp->material.color;
@@ -100,6 +177,7 @@ color_t shootRay(ray_t ray, intersect_t *intersect, int recursionCount) {
       reflective = temp->material.reflective;
     }
 
+    // Get a normal where we intersected
     vec_t normal;
     if (geomType == GeomTypeTriangle) {
       triangle_t *temp = (triangle_t *)geomObject;
@@ -110,12 +188,13 @@ color_t shootRay(ray_t ray, intersect_t *intersect, int recursionCount) {
       normal = sphere_normal_at_point(*temp, intersect->point);
     }
 
-    if (reflective && recursionCount < 10) { // Shoot a new ray
+    if (reflective && recursionCount < 10) {
       // First find the reflected ray
       vec_t r = vec_sub(ray.direction, vec_mult(normal, 2 * vec_dot(normal, ray.direction)));
       point_t start = point_offset(intersect->point, vec_mult(r, 0.0001));
       ray_t reflectedRay = ray_new(start, r);
-      color = shootRay(reflectedRay, intersect, recursionCount + 1);  // Recurse
+      // Shoot out a new ray and take its color
+      color = shootRay(reflectedRay, intersect, recursionCount + 1);
     } else if (!reflective) {
       point_t sPos = intersect->point;
       vec_t sDir;
@@ -129,10 +208,11 @@ color_t shootRay(ray_t ray, intersect_t *intersect, int recursionCount) {
 
         if (intersect->t <= 0) { // We did't hit anything, diffuse like normal
           totalDiffuse += fabsf(vec_dot(sDir, normal));
-        }
+        } // Otherwise, we're in shadow
       }
 
       if (totalDiffuse < 0.2) totalDiffuse = 0.2;
+      if (totalDiffuse > 1) totalDiffuse = 1;
       color.r *= totalDiffuse;
       color.g *= totalDiffuse;
       color.b *= totalDiffuse;
@@ -168,6 +248,8 @@ int main(int argc, char **argv) {
   // Prepare the reference scene
   if (strcmp(filename, "reference.png") == 0) {
     setUpReference();
+  } else if (strcmp(filename, "custom.png") == 0) {
+    setUpCustom();
   }
 
   // Camera position
