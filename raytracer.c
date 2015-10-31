@@ -6,6 +6,133 @@
 
 int width = 512, height = 512; // PNG image size
 
+// The scene
+triangle_t triangles[10]; int numTriangles = 0;
+sphere_t spheres[10]; int numSpheres = 0;
+point_t lights[10]; int numLights = 0;
+
+void setUpReference() {
+  // Light
+  lights[numLights++] = point_new(3, 5, -15);
+
+  // Reflective material
+  color_t color = rgb(0, 0, 0);
+  material_t refl = material_new(color, 1);
+
+  // Red material
+  color = rgb(255, 0, 0);
+  material_t red = material_new(color, 0);
+
+  // Blue material
+  color = rgb(0, 0, 255);
+  material_t blue = material_new(color, 0);
+
+  // White material
+  color = rgb(255, 255, 255);
+  material_t white = material_new(color, 0);
+
+  // Spheres
+  point_t s = point_new(0, 0, -16);
+  spheres[numSpheres++] = sphere_new(s, 2, refl);
+
+  s = point_new(3, -1, -14);
+  spheres[numSpheres++] = sphere_new(s, 1, refl);
+
+  s = point_new(-3, -1, -14);
+  spheres[numSpheres++] = sphere_new(s, 1, red);
+
+  // Back blue wall
+  point_t a = point_new(-8, -2, -20);
+  point_t b = point_new(8, -2, -20);
+  point_t c = point_new(8, 10, -20);
+  triangles[numTriangles++] = triangle_new3(a, b, c, blue);
+  a = point_new(-8, -2, -20);
+  b = point_new(8, 10, -20);
+  c = point_new(-8, 10, -20);
+  triangles[numTriangles++] = triangle_new3(a, b, c, blue);
+
+  // White floor
+  a = point_new(-8, -2, -20);
+  b = point_new(8, -2, -10);
+  c = point_new(8, -2, -20);
+  triangles[numTriangles++] = triangle_new3(a, b, c, white);
+  a = point_new(-8, -2, -20);
+  b = point_new(-8, -2, -10);
+  c = point_new(8, -2, -10);
+  triangles[numTriangles++] = triangle_new3(a, b, c, white);
+
+  // Right red wall
+  a = point_new(8, -2, -20);
+  b = point_new(8, -2, -10);
+  c = point_new(8, 10, -20);
+  triangles[numTriangles++] = triangle_new3(a, b, c, red);
+}
+
+void rayIntersectionTest(ray_t ray, intersect_t *intersect) {
+  intersect->t = -1;
+  // Sphere intersections
+  for (int m = 0; m < numSpheres; m++) {
+    ray_intersects_sphere(ray, &spheres[m], intersect);
+  }
+
+  // Triangle intersections
+  for (int m = 0; m < numTriangles; m++) {
+    ray_intersects_triangle(ray, &triangles[m], intersect);
+  }
+}
+
+color_t shootRay(ray_t ray, intersect_t *intersect) {
+  rayIntersectionTest(ray, intersect);
+  if (intersect->t > 0) {
+    color_t color;
+    GeomType geomType = intersect->geomType;
+    void *geomObject = intersect->object;
+
+    if (geomType == GeomTypeTriangle) {
+      triangle_t *temp = (triangle_t *)geomObject;
+      color = temp->material.color;
+    }
+    else if (geomType == GeomTypeSphere) {
+      sphere_t *temp = (sphere_t *)geomObject;
+      color = temp->material.color;
+    }
+
+    point_t sPos = intersect->point;
+    vec_t sDir;
+    ray_t sRay;
+    float totalDiffuse = 0;
+    for (int m = 0; m < numLights; m++) {
+      sDir = vec_normalize(point_direction(sPos, lights[m]));
+      point_t start = point_offset(sPos, vec_mult(sDir, 0.0001));
+      sRay = ray_new(start, sDir);
+      rayIntersectionTest(sRay, intersect);
+
+      if (intersect->t <= 0) { // We did't hit anything, diffuse like normal
+        vec_t normal;
+        if (geomType == GeomTypeTriangle) {
+          triangle_t *temp = (triangle_t *)geomObject;
+          normal = temp->normal;
+        }
+        else if (geomType == GeomTypeSphere) {
+          sphere_t *temp = (sphere_t *)geomObject;
+          normal = sphere_normal_at_point(*temp, sPos);
+        }
+
+        totalDiffuse += fabsf(vec_dot(sDir, normal));
+      }
+    }
+
+    if (totalDiffuse < 0.2) totalDiffuse = 0.2;
+    color.r *= totalDiffuse;
+    color.g *= totalDiffuse;
+    color.b *= totalDiffuse;
+
+    return color;
+  }
+  // No intersection, color black
+  return rgb(0, 0, 0);
+}
+
 int main(int argc, char **argv) {
 
   // Determine what the output image should be
@@ -27,68 +154,10 @@ int main(int argc, char **argv) {
     return 2;
   }
 
-  triangle_t triangles[10]; int numTriangles = 0;
-  sphere_t spheres[10]; int numSpheres = 0;
-  point_t lights[10]; int numLights = 0;
-
   // Prepare the reference scene
   if (strcmp(filename, "reference.png") == 0) {
-    // Light
-    lights[numLights++] = point_new(3, 5, -15);
-
-    // Reflective material
-    color_t color = rgb(0, 0, 0);
-    material_t refl = material_new(color, 1);
-
-    // Red material
-    color = rgb(255, 0, 0);
-    material_t red = material_new(color, 0);
-
-    // Blue material
-    color = rgb(0, 0, 255);
-    material_t blue = material_new(color, 0);
-
-    // White material
-    color = rgb(255, 255, 255);
-    material_t white = material_new(color, 0);
-
-    // Spheres
-    point_t s = point_new(0, 0, -16);
-    spheres[numSpheres++] = sphere_new(s, 2, refl);
-
-    s = point_new(3, -1, -14);
-    spheres[numSpheres++] = sphere_new(s, 1, refl);
-
-    s = point_new(-3, -1, -14);
-    spheres[numSpheres++] = sphere_new(s, 1, red);
-
-    // Back blue wall
-    point_t a = point_new(-8, -2, -20);
-    point_t b = point_new(8, -2, -20);
-    point_t c = point_new(8, 10, -20);
-    triangles[numTriangles++] = triangle_new3(a, b, c, blue);
-    a = point_new(-8, -2, -20);
-    b = point_new(8, 10, -20);
-    c = point_new(-8, 10, -20);
-    triangles[numTriangles++] = triangle_new3(a, b, c, blue);
-
-    // White floor
-    a = point_new(-8, -2, -20);
-    b = point_new(8, -2, -10);
-    c = point_new(8, -2, -20);
-    triangles[numTriangles++] = triangle_new3(a, b, c, white);
-    a = point_new(-8, -2, -20);
-    b = point_new(-8, -2, -10);
-    c = point_new(8, -2, -10);
-    triangles[numTriangles++] = triangle_new3(a, b, c, white);
-
-    // Right red wall
-    a = point_new(8, -2, -20);
-    b = point_new(8, -2, -10);
-    c = point_new(8, 10, -20);
-    triangles[numTriangles++] = triangle_new3(a, b, c, red);
+    setUpReference();
   }
-
 
   // Camera position
   point_t cameraPos = point_new(0, 0, 0);
@@ -102,6 +171,7 @@ int main(int argc, char **argv) {
   vec_t rayDirection;
   ray_t ray;
   intersect_t intersect;
+  color_t color;
 
   // Calculate the color of each pixel
   for (float j = 0; j < height; j++) {
@@ -113,36 +183,10 @@ int main(int argc, char **argv) {
       rayDirection = vec_normalize(point_direction(cameraPos, pixelPos));
       ray = ray_new(cameraPos, rayDirection);
 
-      // Sphere intersections
-      for (int m = 0; m < numSpheres; m++) {
-        ray_intersects_sphere(ray, &spheres[m], &intersect);
-      }
-
-      // Triangle intersections
-      for (int m = 0; m < numTriangles; m++) {
-        ray_intersects_triangle(ray, &triangles[m], &intersect);
-      }
-
-
-      if (intersect.t >= 0) {
-        if (intersect.geomType == GeomTypeTriangle) {
-          triangle_t *temp = (triangle_t *)intersect.object;
-          imageData[imagePos++] = temp->material.color.r; // R
-          imageData[imagePos++] = temp->material.color.g; // G
-          imageData[imagePos++] = temp->material.color.b; // B
-        }
-        else if (intersect.geomType == GeomTypeSphere) {
-          sphere_t *temp = (sphere_t *)intersect.object;
-          imageData[imagePos++] = temp->material.color.r; // R
-          imageData[imagePos++] = temp->material.color.g; // G
-          imageData[imagePos++] = temp->material.color.b; // B
-        }
-      }
-      else { // No intersection, color black
-        imageData[imagePos++] = 0; // R
-        imageData[imagePos++] = 0; // G
-        imageData[imagePos++] = 0; // B
-      }
+      color = shootRay(ray, &intersect);
+      imageData[imagePos++] = color.r;
+      imageData[imagePos++] = color.g;
+      imageData[imagePos++] = color.b;
     }
   }
 

@@ -2,6 +2,6 @@
 
 ray_t ray_new(point_t point, vec_t direction) {
   ray_t ray;
-  ray.point = point; ray.direction = direction;
+  ray.point = point; ray.direction = vec_normalize(direction);
   return ray;
 }
