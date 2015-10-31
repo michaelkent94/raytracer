@@ -4,12 +4,14 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
-int width = 512, height = 512; // PNG image size
+#define width 512
+#define height 512
 
 // The scene
 triangle_t triangles[20]; int numTriangles = 0;
 sphere_t spheres[20]; int numSpheres = 0;
 point_t lights[20]; int numLights = 0;
+point_t cameraPos;
 
 void setUpReference() {
   // Light
@@ -224,6 +226,40 @@ color_t shootRay(ray_t ray, intersect_t *intersect, int recursionCount) {
   return rgb(0, 0, 0);
 }
 
+color_t getPixel(float x, float y, intersect_t *intersect) {
+  intersect->t = -1;
+  x = (x + 0.5) * 2 / width - 1;
+  y = -((y + 0.5) * 2 / height - 1);
+  point_t pixelPos = point_new(x, y, -2);
+  vec_t rayDirection = vec_normalize(point_direction(cameraPos, pixelPos));
+  ray_t ray = ray_new(cameraPos, rayDirection);
+  return shootRay(ray, intersect, 0);
+}
+
+color_t getAntialiasedPixel(float x, float y, intersect_t *intersect, int antialiasLevel) {
+  antialiasLevel *= antialiasLevel; // square it
+  point_t pos;
+  vec_t rayDirection;
+  ray_t ray;
+  color_t color;
+  float avgR = 0, avgG = 0, avgB = 0;
+  for (int m = 0; m < antialiasLevel; m++) {
+    float randX = (float)rand() / (float)RAND_MAX;
+    float randY = (float)rand() / (float)RAND_MAX;
+    float xPos = (x + randX) * 2 / width - 1;
+    float yPos = -((y + randY) * 2 / height - 1);
+    pos = point_new(xPos, yPos, -2);
+    rayDirection = vec_normalize(point_direction(cameraPos, pos));
+    ray = ray_new(cameraPos, rayDirection);
+    color = shootRay(ray, intersect, 0);
+    avgR += (float)color.r / (float)antialiasLevel;
+    avgG += (float)color.g / (float)antialiasLevel;
+    avgB += (float)color.b / (float)antialiasLevel;
+  }
+
+  return rgb((char)avgR, (char)avgG, (char)avgB);
+}
+
 int main(int argc, char **argv) {
 
   // Determine what the output image should be
@@ -253,30 +289,23 @@ int main(int argc, char **argv) {
   }
 
   // Camera position
-  point_t cameraPos = point_new(0, 0, 0);
+  cameraPos = point_new(0, 0, 0);
 
   // Prepare PNG data array
   char imageData[width*height*3];
   int imagePos = 0;
 
-  float x, y, z = -2;
-  point_t pixelPos;
-  vec_t rayDirection;
-  ray_t ray;
   intersect_t intersect;
   color_t color;
 
   // Calculate the color of each pixel
   for (float j = 0; j < height; j++) {
     for (float i = 0; i < width; i++) {
-      intersect.t = -1;
-      x = (i + 0.5) * 2 / width - 1;
-      y = -((j + 0.5) * 2 / height - 1);
-      pixelPos = point_new(x, y, z);
-      rayDirection = vec_normalize(point_direction(cameraPos, pixelPos));
-      ray = ray_new(cameraPos, rayDirection);
-
-      color = shootRay(ray, &intersect, 0);
+      if (strcmp(filename, "reference.png") == 0) {
+        color = getPixel(i, j, &intersect);
+      } else {
+        color = getAntialiasedPixel(i, j, &intersect, 10);
+      }
       imageData[imagePos++] = color.r;
       imageData[imagePos++] = color.g;
       imageData[imagePos++] = color.b;
