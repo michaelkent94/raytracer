@@ -81,51 +81,62 @@ void rayIntersectionTest(ray_t ray, intersect_t *intersect) {
   }
 }
 
-color_t shootRay(ray_t ray, intersect_t *intersect) {
+color_t shootRay(ray_t ray, intersect_t *intersect, int recursionCount) {
   rayIntersectionTest(ray, intersect);
   if (intersect->t > 0) {
     color_t color;
     GeomType geomType = intersect->geomType;
     void *geomObject = intersect->object;
+    bool reflective = false;
 
     if (geomType == GeomTypeTriangle) {
       triangle_t *temp = (triangle_t *)geomObject;
       color = temp->material.color;
+      reflective = temp->material.reflective;
     }
     else if (geomType == GeomTypeSphere) {
       sphere_t *temp = (sphere_t *)geomObject;
       color = temp->material.color;
+      reflective = temp->material.reflective;
     }
 
-    point_t sPos = intersect->point;
-    vec_t sDir;
-    ray_t sRay;
-    float totalDiffuse = 0;
-    for (int m = 0; m < numLights; m++) {
-      sDir = vec_normalize(point_direction(sPos, lights[m]));
-      point_t start = point_offset(sPos, vec_mult(sDir, 0.0001));
-      sRay = ray_new(start, sDir);
-      rayIntersectionTest(sRay, intersect);
+    vec_t normal;
+    if (geomType == GeomTypeTriangle) {
+      triangle_t *temp = (triangle_t *)geomObject;
+      normal = temp->normal;
+    }
+    else if (geomType == GeomTypeSphere) {
+      sphere_t *temp = (sphere_t *)geomObject;
+      normal = sphere_normal_at_point(*temp, intersect->point);
+    }
 
-      if (intersect->t <= 0) { // We did't hit anything, diffuse like normal
-        vec_t normal;
-        if (geomType == GeomTypeTriangle) {
-          triangle_t *temp = (triangle_t *)geomObject;
-          normal = temp->normal;
-        }
-        else if (geomType == GeomTypeSphere) {
-          sphere_t *temp = (sphere_t *)geomObject;
-          normal = sphere_normal_at_point(*temp, sPos);
-        }
+    if (reflective && recursionCount < 10) { // Shoot a new ray
+      // First find the reflected ray
+      vec_t r = vec_sub(ray.direction, vec_mult(normal, 2 * vec_dot(normal, ray.direction)));
+      point_t start = point_offset(intersect->point, vec_mult(r, 0.0001));
+      ray_t reflectedRay = ray_new(start, r);
+      color = shootRay(reflectedRay, intersect, recursionCount + 1);  // Recurse
+    } else if (!reflective) {
+      point_t sPos = intersect->point;
+      vec_t sDir;
+      ray_t sRay;
+      float totalDiffuse = 0;
+      for (int m = 0; m < numLights; m++) {
+        sDir = vec_normalize(point_direction(sPos, lights[m]));
+        point_t start = point_offset(sPos, vec_mult(sDir, 0.0001));
+        sRay = ray_new(start, sDir);
+        rayIntersectionTest(sRay, intersect);
 
-        totalDiffuse += fabsf(vec_dot(sDir, normal));
+        if (intersect->t <= 0) { // We did't hit anything, diffuse like normal
+          totalDiffuse += fabsf(vec_dot(sDir, normal));
+        }
       }
-    }
 
-    if (totalDiffuse < 0.2) totalDiffuse = 0.2;
-    color.r *= totalDiffuse;
-    color.g *= totalDiffuse;
-    color.b *= totalDiffuse;
+      if (totalDiffuse < 0.2) totalDiffuse = 0.2;
+      color.r *= totalDiffuse;
+      color.g *= totalDiffuse;
+      color.b *= totalDiffuse;
+    }
 
     return color;
   }
@@ -183,7 +194,7 @@ int main(int argc, char **argv) {
       rayDirection = vec_normalize(point_direction(cameraPos, pixelPos));
       ray = ray_new(cameraPos, rayDirection);
 
-      color = shootRay(ray, &intersect);
+      color = shootRay(ray, &intersect, 0);
       imageData[imagePos++] = color.r;
       imageData[imagePos++] = color.g;
       imageData[imagePos++] = color.b;
