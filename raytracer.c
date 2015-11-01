@@ -376,25 +376,28 @@ color_t getPixel(float x, float y, intersect_t *intersect) {
   return shootRay(ray, intersect, 0);
 }
 
-color_t getAntialiasedPixel(float x, float y, intersect_t *intersect, int antialiasLevel) {
-  antialiasLevel *= antialiasLevel; // square it
+color_t getAntialiasedPixel(float x, float y, intersect_t *intersect, float antialiasLevel) {
+  float antialiasLevelSquared = antialiasLevel * antialiasLevel;
+  float precalculatedOffsetPart = 1.0 / (2.0 * antialiasLevel);
   point_t pos;
   vec_t rayDirection;
   ray_t ray;
   color_t color;
   float avgR = 0, avgG = 0, avgB = 0;
-  for (int m = 0; m < antialiasLevel; m++) {
-    float randX = (float)rand() / (float)RAND_MAX;
-    float randY = (float)rand() / (float)RAND_MAX;
-    float xPos = (x + randX) * 2 / width - 1;
-    float yPos = -((y + randY) * 2 / height - 1);
-    pos = point_new(xPos, yPos, -2);
-    rayDirection = vec_normalize(point_direction(cameraPos, pos));
-    ray = ray_new(cameraPos, rayDirection);
-    color = shootRay(ray, intersect, 0);
-    avgR += (float)color.r / (float)antialiasLevel;
-    avgG += (float)color.g / (float)antialiasLevel;
-    avgB += (float)color.b / (float)antialiasLevel;
+  for (int j = 0; j < antialiasLevel; j++) {
+    for (int i = 0; i < antialiasLevel; i++) {
+      float xOff = i / antialiasLevel + precalculatedOffsetPart;
+      float yOff = j / antialiasLevel + precalculatedOffsetPart;
+      float xPos = (x + xOff) * 2 / width - 1;
+      float yPos = -((y + yOff) * 2 / height - 1);
+      pos = point_new(xPos, yPos, -2);
+      rayDirection = vec_normalize(point_direction(cameraPos, pos));
+      ray = ray_new(cameraPos, rayDirection);
+      color = shootRay(ray, intersect, 0);
+      avgR += (float)color.r / (float)antialiasLevelSquared;
+      avgG += (float)color.g / (float)antialiasLevelSquared;
+      avgB += (float)color.b / (float)antialiasLevelSquared;
+    }
   }
 
   return rgb((char)avgR, (char)avgG, (char)avgB);
