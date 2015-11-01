@@ -353,6 +353,9 @@ color_t shootRay(ray_t ray, intersect_t *intersect, int recursionCount) {
         }
       }
 
+      totalDiffuse /= numLights;  // We want the total intensity of lights to be the
+                                  // same no matter how many we have
+
       if (totalDiffuse < 0.2) totalDiffuse = 0.2;
       if (totalDiffuse > 1) totalDiffuse = 1;
       color.r *= totalDiffuse;
