@@ -4,6 +4,7 @@
 #include "geom/color.h"
 #include "geom/geom_types.h"
 #include "geom/intersect.h"
+#include "geom/light.h"
 #include "geom/material.h"
 #include "geom/point.h"
 #include "geom/ray.h"

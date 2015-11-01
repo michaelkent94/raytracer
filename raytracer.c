@@ -10,12 +10,12 @@
 // The scene
 triangle_t triangles[20]; int numTriangles = 0;
 sphere_t spheres[20]; int numSpheres = 0;
-point_t lights[20]; int numLights = 0;
+light_t lights[20]; int numLights = 0;
 point_t cameraPos;
 
 void setUpReference() {
   // Light
-  lights[numLights++] = point_new(3, 5, -15);
+  lights[numLights++] = light_new(point_new(3, 5, -15), 0);
 
   // Reflective material
   color_t color = rgb(0, 0, 0);
@@ -72,7 +72,7 @@ void setUpReference() {
 
 void setUpCustom() {
   // Light
-  lights[numLights++] = point_new(0, 0, -4);
+  lights[numLights++] = light_new(point_new(0, 2, -6), 0.5);
 
   // Reflective material
   color_t color = rgb(0, 0, 0);
@@ -86,13 +86,20 @@ void setUpCustom() {
   color = rgb(46, 204, 113);
   material_t green = material_new(color, 0);
 
+  // Purple material
+  color = rgb(155, 89, 182);
+  material_t purple = material_new(color, 0);
+
   // White material
   color = rgb(255, 255, 255);
   material_t white = material_new(color, 0);
 
-  // Sphere
+  // Spheres
   point_t s = point_new(-1, -1, -8);
   spheres[numSpheres++] = sphere_new(s, 1, refl);
+
+  s = point_new(1, -1, -7);
+  spheres[numSpheres++] = sphere_new(s, 1, purple);
 
   // White back wall
   point_t a = point_new(-2.5, -2, -10);
@@ -104,12 +111,112 @@ void setUpCustom() {
   c = point_new(-2.5, 2, -10);
   triangles[numTriangles++] = triangle_new3(a, b, c, white);
 
-  // White ceiling
+  // White ceiling (it has a hole in it...)
   a = point_new(-2.5, 2, -2);
   b = point_new(2.5, 2, -2);
-  c = point_new(2.5, 2, -10);
+  c = point_new(2.5, 2, -5.5);
   triangles[numTriangles++] = triangle_new3(a, b, c, white);
   a = point_new(-2.5, 2, -2);
+  b = point_new(2.5, 2, -5.5);
+  c = point_new(-2.5, 2, -5.5);
+  triangles[numTriangles++] = triangle_new3(a, b, c, white);
+  a = point_new(-2.5, 2, -10);
+  b = point_new(2.5, 2, -6.5);
+  c = point_new(-2.5, 2, -6.5);
+  triangles[numTriangles++] = triangle_new3(a, b, c, white);
+  a = point_new(-2.5, 2, -10);
+  b = point_new(2.5, 2, -10);
+  c = point_new(2.5, 2, -6.5);
+  triangles[numTriangles++] = triangle_new3(a, b, c, white);
+  a = point_new(-2.5, 2, -6.5);
+  b = point_new(-0.5, 2, -6.5);
+  c = point_new(-0.5, 2, -5.5);
+  triangles[numTriangles++] = triangle_new3(a, b, c, white);
+  a = point_new(-2.5, 2, -6.5);
+  b = point_new(-0.5, 2, -5.5);
+  c = point_new(-2.5, 2, -5.5);
+  triangles[numTriangles++] = triangle_new3(a, b, c, white);
+  a = point_new(0.5, 2, -6.5);
+  b = point_new(2.5, 2, -6.5);
+  c = point_new(2.5, 2, -5.5);
+  triangles[numTriangles++] = triangle_new3(a, b, c, white);
+  a = point_new(0.5, 2, -6.5);
+  b = point_new(2.5, 2, -5.5);
+  c = point_new(0.5, 2, -5.5);
+  triangles[numTriangles++] = triangle_new3(a, b, c, white);
+
+  // White floor
+  a = point_new(-2.5, -2, -2);
+  b = point_new(2.5, -2, -2);
+  c = point_new(2.5, -2, -10);
+  triangles[numTriangles++] = triangle_new3(a, b, c, white);
+  a = point_new(-2.5, -2, -2);
+  b = point_new(2.5, -2, -10);
+  c = point_new(-2.5, -2, -10);
+  triangles[numTriangles++] = triangle_new3(a, b, c, white);
+
+  // Red left wall
+  a = point_new(-2.5, -2, -2);
+  b = point_new(-2.5, -2, -10);
+  c = point_new(-2.5, 2, -10);
+  triangles[numTriangles++] = triangle_new3(a, b, c, red);
+  a = point_new(-2.5, -2, -2);
+  b = point_new(-2.5, 2, -10);
+  c = point_new(-2.5, 2, -2);
+  triangles[numTriangles++] = triangle_new3(a, b, c, red);
+
+  // Green right wall
+  a = point_new(2.5, -2, -2);
+  b = point_new(2.5, -2, -10);
+  c = point_new(2.5, 2, -10);
+  triangles[numTriangles++] = triangle_new3(a, b, c, green);
+  a = point_new(2.5, -2, -2);
+  b = point_new(2.5, 2, -10);
+  c = point_new(2.5, 2, -2);
+  triangles[numTriangles++] = triangle_new3(a, b, c, green);
+}
+
+void setUpFancy() {
+  // Lights
+  lights[numLights++] = light_new(point_new(-1.75, 2, -9), 0.5);
+  lights[numLights++] = light_new(point_new(1.75, 2, -6), 0.5);
+
+  // Reflective material
+  color_t color = rgb(0, 0, 0);
+  material_t refl = material_new(color, 1);
+
+  // Red material
+  color = rgb(231, 76, 60);
+  material_t red = material_new(color, 0);
+
+  // Green material
+  color = rgb(46, 204, 113);
+  material_t green = material_new(color, 0);
+
+  // Purple material
+  color = rgb(155, 89, 182);
+  material_t purple = material_new(color, 0);
+
+  // White material
+  color = rgb(255, 255, 255);
+  material_t white = material_new(color, 0);
+
+  // Spheres
+  point_t s = point_new(-1, -1, -8);
+  spheres[numSpheres++] = sphere_new(s, 1, refl);
+
+  s = point_new(1, -1, -7);
+  spheres[numSpheres++] = sphere_new(s, 1, purple);
+
+  s = point_new(0, 1, -10);
+  spheres[numSpheres++] = sphere_new(s, 1, refl);
+
+  // White back wall
+  point_t a = point_new(-2.5, -2, -10);
+  point_t b = point_new(2.5, -2, -10);
+  point_t c = point_new(-2.5, 2, -10);
+  triangles[numTriangles++] = triangle_new3(a, b, c, white);
+  a = point_new(2.5, -2, -10);
   b = point_new(2.5, 2, -10);
   c = point_new(-2.5, 2, -10);
   triangles[numTriangles++] = triangle_new3(a, b, c, white);
@@ -143,7 +250,19 @@ void setUpCustom() {
   b = point_new(2.5, 2, -10);
   c = point_new(2.5, 2, -2);
   triangles[numTriangles++] = triangle_new3(a, b, c, green);
+}
 
+void rayIntersectionNonLightTest(ray_t ray, intersect_t *intersect) {
+  intersect->t = -1;
+  // Sphere intersections
+  for (int m = 0; m < numSpheres; m++) {
+    ray_intersects_sphere(ray, &spheres[m], intersect);
+  }
+
+  // Triangle intersections
+  for (int m = 0; m < numTriangles; m++) {
+    ray_intersects_triangle(ray, &triangles[m], intersect);
+  }
 }
 
 void rayIntersectionTest(ray_t ray, intersect_t *intersect) {
@@ -156,6 +275,11 @@ void rayIntersectionTest(ray_t ray, intersect_t *intersect) {
   // Triangle intersections
   for (int m = 0; m < numTriangles; m++) {
     ray_intersects_triangle(ray, &triangles[m], intersect);
+  }
+
+  // Light intersections
+  for (int m = 0; m < numLights; m++) {
+    ray_intersects_light(ray, &lights[m], intersect);
   }
 }
 
@@ -177,6 +301,8 @@ color_t shootRay(ray_t ray, intersect_t *intersect, int recursionCount) {
       sphere_t *temp = (sphere_t *)geomObject;
       color = temp->material.color;
       reflective = temp->material.reflective;
+    } else if (geomType == GeomTypeLight) {
+      return rgb(255, 255, 255);
     }
 
     // Get a normal where we intersected
@@ -199,18 +325,32 @@ color_t shootRay(ray_t ray, intersect_t *intersect, int recursionCount) {
       color = shootRay(reflectedRay, intersect, recursionCount + 1);
     } else if (!reflective) {
       point_t sPos = intersect->point;
-      vec_t sDir;
       ray_t sRay;
       float totalDiffuse = 0;
       for (int m = 0; m < numLights; m++) {
-        sDir = vec_normalize(point_direction(sPos, lights[m]));
-        point_t start = point_offset(sPos, vec_mult(sDir, 0.0001));
-        sRay = ray_new(start, sDir);
-        rayIntersectionTest(sRay, intersect);
+        if (lights[m].size == 0) {
+          sRay = ray_to_light(lights[m], sPos);
+          sRay.point = point_offset(sRay.point, vec_mult(sRay.direction, 0.0001));
+          rayIntersectionNonLightTest(sRay, intersect);
 
-        if (intersect->t <= 0) { // We did't hit anything, diffuse like normal
-          totalDiffuse += fabsf(vec_dot(sDir, normal));
-        } // Otherwise, we're in shadow
+          if (intersect->t <= 0) { // We did't hit anything, diffuse like normal
+            totalDiffuse += fabsf(vec_dot(sRay.direction, normal));
+          } // Otherwise, we're in shadow
+        } else {
+          float lightRays = 100 * lights[m].size;
+          float lightDiffuse = 0;
+          for (int l = 0; l < lightRays; l++) {
+            sRay = ray_to_light(lights[m], sPos);
+            sRay.point = point_offset(sRay.point, vec_mult(sRay.direction, 0.0001));
+            rayIntersectionNonLightTest(sRay, intersect);
+
+            if (intersect->t <= 0) {  // We didn't hit anything, diffuse like normal
+              lightDiffuse += fabsf(vec_dot(sRay.direction, normal));
+            } // Otherwise, we're in shadow
+          }
+
+          totalDiffuse += lightDiffuse / lightRays;
+        }
       }
 
       if (totalDiffuse < 0.2) totalDiffuse = 0.2;
@@ -265,11 +405,14 @@ int main(int argc, char **argv) {
   // Determine what the output image should be
   char filename[14];
   if (argc > 1) {
-    if (strncmp(argv[1], "reference", 13) == 0) {
+    if (strcmp(argv[1], "reference") == 0) {
       strcpy(filename, "reference.png");
     }
-    else if (strncmp(argv[1], "custom", 10) == 0) {
+    else if (strcmp(argv[1], "custom") == 0) {
       strcpy(filename, "custom.png");
+    }
+    else if (strcmp(argv[1], "fancy") == 0) {
+      strcpy(filename, "fancy.png");
     }
     else {
       fprintf(stderr, "Incorrect argument recieved\nUsage: %s reference.png | custom.png\n", argv[0]);
@@ -286,6 +429,8 @@ int main(int argc, char **argv) {
     setUpReference();
   } else if (strcmp(filename, "custom.png") == 0) {
     setUpCustom();
+  } else if (strcmp(filename, "fancy.png") == 0) {
+    setUpFancy();
   }
 
   // Camera position
@@ -303,8 +448,10 @@ int main(int argc, char **argv) {
     for (float i = 0; i < width; i++) {
       if (strcmp(filename, "reference.png") == 0) {
         color = getPixel(i, j, &intersect);
+      } else if (strcmp(filename, "custom.png") == 0) {
+        color = getAntialiasedPixel(i, j, &intersect, 2);
       } else {
-        color = getAntialiasedPixel(i, j, &intersect, 10);
+        color = getAntialiasedPixel(i, j, &intersect, 5); // Really ramp it up
       }
       imageData[imagePos++] = color.r;
       imageData[imagePos++] = color.g;

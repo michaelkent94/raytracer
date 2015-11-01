@@ -1,6 +1,6 @@
 CC = gcc
 GEOMDIR = geom
-GEOMOBJ = color intersect material point ray sphere triangle vec
+GEOMOBJ = color intersect light material point ray sphere triangle vec
 OBJ = $(addsuffix .o, raytracer $(addprefix $(GEOMDIR)/,$(GEOMOBJ)))
 OBJDIR = obj
 EXEC = ray
@@ -14,4 +14,4 @@ $(EXEC): $(OBJ)
 	$(CC) -o $@ $(addprefix $(OBJDIR)/,$(notdir $^))
 
 clean:
-	rm -rf $(EXEC) $(OBJDIR) reference.png custom.png
+	rm -rf $(EXEC) $(OBJDIR) reference.png custom.png fancy.png

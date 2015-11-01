@@ -3,7 +3,8 @@
 
 typedef enum {
   GeomTypeTriangle,
-  GeomTypeSphere
+  GeomTypeSphere,
+  GeomTypeLight
 } GeomType;
 
 #endif
