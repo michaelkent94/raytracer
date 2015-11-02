@@ -180,6 +180,7 @@ void setUpFancy() {
   // Lights
   lights[numLights++] = light_new(point_new(-1.75, 2, -9), 0.5);
   lights[numLights++] = light_new(point_new(1.75, 2, -6), 0.5);
+  lights[numLights++] = light_new(point_new(-1.75, 2, -5), 0.5);
 
   // Reflective material
   color_t color = rgb(0, 0, 0);
